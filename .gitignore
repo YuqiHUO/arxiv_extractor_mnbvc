@@ -1,0 +1,5 @@
+arxiv-subset-100/*
+__pycache__/*
+parse/*
+tex.jsonl
+*.txt
