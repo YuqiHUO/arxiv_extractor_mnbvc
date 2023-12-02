@@ -7,8 +7,9 @@
 ### environment
 ```
 pip install chardet docker
-安装 https://github.com/arxiv-vanity/engrafo 中的[docker file](https://hub.docker.com/r/arxivvanity/engrafo/tags)
 ```
+安装 https://github.com/arxiv-vanity/engrafo 中的[docker file](https://hub.docker.com/r/arxivvanity/engrafo/tags)
+
 
 ### usage
 准备好arxiv原始文件
