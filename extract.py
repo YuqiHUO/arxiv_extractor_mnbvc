@@ -2,6 +2,7 @@ import os
 import tarfile
 from tqdm import tqdm
 import json
+import docker
 
 import chardet
 
@@ -11,6 +12,12 @@ from utils import list_tex_files, filter_tex_file
 RAW_PATH = "arxiv-subset-100"
 PARSE_PATH = "parse"
 OUTPUT_TEX_PATH = 'tex.jsonl'
+
+client = docker.from_env()
+
+
+def extract_interleaved_mm(main_tex_file):
+    pass
 
 
 def write_to_jsonl(tex_filelist):
@@ -39,7 +46,28 @@ def extract_tex(arxiv_parse_path):
     if len(tex_filelist) > 1:
         tex_filelist = list(filter(filter_tex_file, tex_filelist))
     write_to_jsonl(tex_filelist)
+    return tex_filelist
 
+def tex_to_html(main_tex_file, id):
+    # 将.tex文件编译为html文件
+    container_config = {
+        'image': 'arxivvanity/engrafo',
+        'command': [
+            'engrafo',
+            '{}'.format(main_tex_file),
+            '{}/{}/html_output/'.format(PARSE_PATH, id)
+        ],
+        'volumes': {
+            f"{os.getcwd()}": {
+                'bind': '/workdir',
+                'mode': 'rw'
+            }
+        },
+        'working_dir': '/workdir',
+        'detach': True,
+    }
+    container = client.containers.run(**container_config)
+    print("Parse {id} from tex to html in Container ID:{cid}".format(id=id, cid=container.id))
 
 def extract_one_arxiv(id):
     """
@@ -65,12 +93,15 @@ def extract_one_arxiv(id):
     # 解压
     try:
         with tarfile.open(source_file_path_gz, 'r:gz') as tar_ref:
+            # 这里会有一批古老的压缩包无法解压
             tar_ref.extractall(arxiv_parse_path)
 
-        # 1.解析代码
-        extract_tex(arxiv_parse_path)
-
-        # 2.解析图文
+        # 1.解析代码, 得到包含".tex"类型文件的list
+        tex_filelist = extract_tex(arxiv_parse_path)
+        # 2.将tex文件编译为html文件
+        tex_to_html(tex_filelist[0], id)
+        # 2.解析图文 (只有一个入口文件)
+        extract_interleaved_mm(tex_filelist[0])
         is_success = True
     except tarfile.InvalidHeaderError as e:
         print(id, e)
@@ -85,7 +116,7 @@ def extract_one_arxiv(id):
 def main():
     os.makedirs(PARSE_PATH, exist_ok=True)
     arxiv_ids = [d for d in os.listdir(RAW_PATH) if os.path.isdir(os.path.join(RAW_PATH, d))]
-    arxiv_ids = arxiv_ids#[:10]
+    arxiv_ids = arxiv_ids
     success = 0
     for arxiv_id in tqdm(arxiv_ids):
         if extract_one_arxiv(arxiv_id):
