@@ -6,7 +6,8 @@
 ## get started
 ### environment
 ```
-pip install chardet
+pip install chardet docker
+安装 https://github.com/arxiv-vanity/engrafo 中的[docker file](https://hub.docker.com/r/arxivvanity/engrafo/tags)
 ```
 
 ### usage
@@ -16,3 +17,4 @@ python extract.py
 ```
 
 得到的`tex.jsonl`是代码语料。
+
